@@ -123,6 +123,28 @@ resource "aws_s3_bucket_public_access_block" "tgw_flow_logs" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "tgw_flow_logs" {
+  provider = aws.consumer
+  bucket   = aws_s3_bucket.tgw_flow_logs.id
+
+  rule {
+    id     = "expire-tgw-flow-logs-7d"
+    status = "Enabled"
+
+    filter {
+      prefix = "tgw-flow-logs/"
+    }
+
+    expiration {
+      days = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 1
+    }
+  }
+}
+
 # Bucket policy: allow delivery.logs.amazonaws.com (from hub account) to write flow logs
 data "aws_iam_policy_document" "tgw_flow_logs_bucket" {
   provider = aws.consumer
