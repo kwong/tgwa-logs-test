@@ -33,6 +33,54 @@ data "aws_caller_identity" "hub" {
   provider = aws.hub
 }
 
+# CMK for TGW flow log bucket — key policy grants delivery.logs.amazonaws.com encrypt access
+# scoped to the hub account so only hub-originated log delivery can use the key.
+resource "aws_kms_key" "tgw_flow_logs" {
+  provider                = aws.consumer
+  description             = "CMK for TGW flow log bucket"
+  deletion_window_in_days = 14
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "KeyAdminConsumerAccount"
+        Effect   = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.consumer.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid      = "AWSLogDeliveryEncrypt"
+        Effect   = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action   = ["kms:GenerateDataKey*"]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.hub.account_id
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "tgw-flow-log-bucket-key"
+  }
+}
+
+resource "aws_kms_alias" "tgw_flow_logs" {
+  provider      = aws.consumer
+  name          = "alias/tgw-flow-log-bucket-key"
+  target_key_id = aws_kms_key.tgw_flow_logs.key_id
+}
+
 resource "aws_s3_bucket" "tgw_flow_logs" {
   provider      = aws.consumer
   bucket        = "tgw-flow-logs-${data.aws_caller_identity.consumer.account_id}"
@@ -40,6 +88,19 @@ resource "aws_s3_bucket" "tgw_flow_logs" {
 
   tags = {
     Name = "tgw-attachment-flow-log-lab"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "tgw_flow_logs" {
+  provider = aws.consumer
+  bucket   = aws_s3_bucket.tgw_flow_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.tgw_flow_logs.arn
+    }
+    bucket_key_enabled = true
   }
 }
 
