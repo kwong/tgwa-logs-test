@@ -1,0 +1,8 @@
+aws_region          = "ap-southeast-1"
+hub_profile         = "infra_gic"
+consumer_profile    = "automation_gic"
+hub_role_arn        = "arn:aws:iam::682033473877:role/TerraformTGWLabRole"
+consumer_role_arn   = "arn:aws:iam::537124943022:role/TerraformTGWLabRole"
+consumer_vpc_id     = "vpc-0128ec6125adad939"     # replace with your consumer VPC ID
+consumer_subnet_ids = ["subnet-0fdb50216b4ebd478"] # replace with your consumer subnet IDs
+enable_ram_accepter = true

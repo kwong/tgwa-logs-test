@@ -1,0 +1,7 @@
+aws_region           = "ap-southeast-1"
+hub_profile          = "hub-sso"          # your SSO profile name for the hub account
+consumer_profile     = "consumer-sso"     # your SSO profile name for the consumer account
+hub_account_id       = "682033473877"
+consumer_account_id  = "537124943022"
+hub_sso_role_name      = "AWSReservedSSO_AWSAdministratorAccess_88ead7c87b9b649c"
+consumer_sso_role_name = "AWSReservedSSO_AWSAdministratorAccess_0a91c60135d1d2ba"
